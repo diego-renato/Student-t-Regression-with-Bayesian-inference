@@ -1,4 +1,4 @@
-### Define the parameters
+### Set the parameters
 desv=sqrt(3)
 n=30
 b0= 216.694
