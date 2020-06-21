@@ -1,3 +1,4 @@
+### Define the parameters
 desv=sqrt(3)
 n=30
 b0= 216.694
@@ -29,8 +30,8 @@ for (i in 1:9) {
 
    
 library(MASS)
-   ################################ parte bayesiana
-## modelo Normal
+   ################################ Bayesian part
+##  Normal regression (classic)
 L=10000
 B0.n<-matrix(0,L,100)
 B1.n<-matrix(0,L,100)
@@ -101,7 +102,7 @@ for (i in 1:9) {
   abline(v=3)
 }
 
-### modelo t-student
+### t-student regression
    L=10000
    B0<-matrix(0,L,100)
    B1<-matrix(0,L,100)
@@ -129,7 +130,7 @@ for (i in 1:9) {
      b.sigma=0.5*sum((Ys[,i]-mu)**2*w1)
      var[h,i]=1/rgamma(1,a.sigma,b.sigma)
    }}
-## Gráficos   
+## graphics   
    par(mfrow=c(3,3))
    print("Gráfico de cadenas B0") 
    for (i in 1:9) {
@@ -175,7 +176,7 @@ for (i in 1:9) {
      abline(v=3)
    }
 
-###### diagnósticos
+###### diagnostic
    for (j in 1:M) {
      T[j,1:9]<-c(mean(B0.n[,j]),
                  mean(B1.n[,j]),
