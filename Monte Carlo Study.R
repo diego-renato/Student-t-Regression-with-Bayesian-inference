@@ -4,7 +4,7 @@ n=30
 b0= 216.694
 b1=2.947
 
-M=5000
+M=500
 T<-matrix(0,M,18)
  colnames(T)<-c("b0.N","b1.N","Var.N","Li.b0.N","Ls.b0.N","Li.b1.N","Ls.b1.N",
                 "Li.Var.N","Ls.Var.N","b0.T","b1.T","Var.T","Li.b0.T","Ls.b0.T",
