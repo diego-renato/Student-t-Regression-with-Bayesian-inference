@@ -1,61 +1,64 @@
-### Set the parameters
-desv=sqrt(3)
-n=30
-b0= 216.694
-b1=2.947
+# Author Diego Renato Risco Cosavalente
+# Created in 2018
 
-M=500
-T<-matrix(0,M,18)
- colnames(T)<-c("b0.N","b1.N","Var.N","Li.b0.N","Ls.b0.N","Li.b1.N","Ls.b1.N",
+require(extraDistr) 
+require(MASS)
+
+desv = sqrt(3)
+n = 30
+b0 = 216.694
+b1 = 2.947
+
+MonteCarloSize = 500
+ResultsTable <- matrix(0,MonteCarloSize,18)
+ colnames(ResultsTable)<-c("b0.N","b1.N","Var.N","Li.b0.N","Ls.b0.N","Li.b1.N","Ls.b1.N",
                 "Li.Var.N","Ls.Var.N","b0.T","b1.T","Var.T","Li.b0.T","Ls.b0.T",
                 "Li.b1.T","Ls.b1.T","Li.Var.T","Ls.Var.T")
 
-#Estudio de simulación
-  set.seed(300) 
-   x<-rnorm(n,25,4)
-   u<-b0+b1*x
-   Ys<-matrix(0,n,M)
-   library(extraDistr) 
-   for (j in 1:M) {
-      Ys[,j]<-rslash(n,u,sigma = desv)}
+# Generate from slash distribution
+set.seed(300) 
+x <- rnorm(n,25,4)
+u <- b0+b1*x
+Ys <- matrix(0,n,MonteCarloSize)
+   for (generateSample_i in 1:MonteCarloSize) {
+      Ys[,generateSample_i]<-rslash(n,u,sigma = desv)}
    
 par(mfrow=c(3,3))
 
-for (i in 1:9) {
-  b<-as.numeric(boxplot(Ys[,i],plot = F)$out)
-  a<- which(Ys[,i]%in%b) 
- plot(x,Ys[,i],ylab = paste("y",i,sep = ""))
- points(x[a],Ys[a,i],col="red",coltext = "brown")  
+for (Sample_i in 1:9) {
+  positionOfOutliers <- as.numeric(boxplot(Ys[,Sample_i],plot = F)$out)
+  outliersInResponse <- which(Ys[,Sample_i]%in%positionOfOutliers) 
+ plot(x,Ys[,Sample_i],ylab = paste("y",Sample_i,sep = ""))
+ points(x[outliersInResponse],Ys[outliersInResponse,Sample_i],col="red",coltext = "brown")  
 }
 
    
-library(MASS)
-   ################################ Bayesian part
-##  Normal regression (classic)
-L=10000
-B0.n<-matrix(0,L,100)
-B1.n<-matrix(0,L,100)
-var.n<-matrix(0,L,100)
-B0.n[1,]<-100
-B1.n[1,]<-4
-var.n[1,]<-4
-X<-as.matrix(cbind.data.frame(1,x))
 
-for (i in 1:M) {
-  for(h in 2:L){
-    mu=B0.n[h-1,i]+B1.n[h-1,i]*x
-    Mv<-solve(t(X)%*%X)*var.n[h-1,i]
-    mu.beta=solve(t(X)%*%X)%*%t(X)%*%Ys[,i]
-    b<-mvrnorm(1,mu.beta,Sigma = Mv)
-    B0.n[h,i]<-b[1]
-    B1.n[h,i]<-b[2]
+   
+GibbsSample = 10000
+B0.n <- matrix(0,GibbsSample,MonteCarloSize)
+B1.n <- matrix(0,GibbsSample,MonteCarloSize)
+var.n <- matrix(0,GibbsSample,MonteCarloSize)
+B0.n[1,] <- 100
+B1.n[1,] <- 4
+var.n[1,] <- 4
+X <- as.matrix(cbind.data.frame(1,x))
+
+for (i in 1:MonteCarloSize) {
+  for(h in 2:GibbsSample){
+    mu = B0.n[h-1,i]+B1.n[h-1,i]*x
+    Mv <- solve(t(X)%*%X)*var.n[h-1,i]
+    mu.beta = solve(t(X)%*%X)%*%t(X)%*%Ys[,i]
+    b <- mvrnorm(1,mu.beta,Sigma = Mv)
+    B0.n[h,i] <- b[1]
+    B1.n[h,i] <- b[2]
     
-    mu=B0.n[h,i]+B1.n[h,i]*x
-    a.sigma=0.5*length(x)
-    b.sigma=0.5*sum((Ys[,i]-mu)**2)
-    var.n[h,i]=1/rgamma(1,a.sigma,b.sigma)
+    mu = B0.n[h,i]+B1.n[h,i]*x
+    a.sigma = 0.5*length(x)
+    b.sigma = 0.5*sum((Ys[,i]-mu)**2)
+    var.n[h,i] = 1/rgamma(1,a.sigma,b.sigma)
   }}
-## Gráficos
+
 par(mfrow=c(3,3))
 for (i in 1:9) {
 print("Gráfico de cadenas B0")  
@@ -103,34 +106,34 @@ for (i in 1:9) {
 }
 
 ### t-student regression
-   L=10000
-   B0<-matrix(0,L,100)
-   B1<-matrix(0,L,100)
-   var<-matrix(0,L,100)
-   B0[1,]<-16
-   B1[1,]<-2
-   var[1,]<-4
+   
+   B0 <- matrix(0,GibbsSample,MonteCarloSize)
+   B1 <- matrix(0,GibbsSample,MonteCarloSize)
+   var <- matrix(0,GibbsSample,MonteCarloSize)
+   B0[1,] <- 16
+   B1[1,] <- 2
+   var[1,] <- 4
    v<-3
-   X<-as.matrix(cbind.data.frame(1,x))
+   X <- as.matrix(cbind.data.frame(1,x))
   
-  for (i in 1:M) {
-   for(h in 2:L){
-     mu=B0[h-1,i]+B1[h-1,i]*x
-     w1<-rgamma(n,(v+1)/2,(v+(Ys[,i]-mu)^2/var[h-1,i])/2)
-     w<-diag(w1)
+  for (i in 1:MonteCarloSize) {
+   for(h in 2:GibbsSample){
+     mu = B0[h-1,i]+B1[h-1,i]*x
+     w1 <- rgamma(n,(v+1)/2,(v+(Ys[,i]-mu)^2/var[h-1,i])/2)
+     w <- diag(w1)
      
-     Mv<-solve(t(X)%*%w%*%X)*var[h-1,i]
-     mu.beta=solve(t(X)%*%w%*%X)%*%t(X)%*%w%*%Ys[,i]
-     b<-mvrnorm(1,mu.beta,Sigma = Mv)
-     B0[h,i]<-b[1]
-     B1[h,i]<-b[2]
+     Mv <- solve(t(X)%*%w%*%X)*var[h-1,i]
+     mu.beta = solve(t(X)%*%w%*%X)%*%t(X)%*%w%*%Ys[,i]
+     b <- mvrnorm(1,mu.beta,Sigma = Mv)
+     B0[h,i] <- b[1]
+     B1[h,i] <- b[2]
      
-     mu=B0[h,i]+B1[h,i]*x
-     a.sigma=0.5*length(x)
-     b.sigma=0.5*sum((Ys[,i]-mu)**2*w1)
-     var[h,i]=1/rgamma(1,a.sigma,b.sigma)
+     mu = B0[h,i]+B1[h,i]*x
+     a.sigma = 0.5*length(x)
+     b.sigma = 0.5*sum((Ys[,i]-mu)**2*w1)
+     var[h,i] = 1/rgamma(1,a.sigma,b.sigma)
    }}
-## graphics   
+
    par(mfrow=c(3,3))
    print("Gráfico de cadenas B0") 
    for (i in 1:9) {
